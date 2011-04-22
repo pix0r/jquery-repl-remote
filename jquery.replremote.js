@@ -10,10 +10,10 @@
  */
 
 (function($) {
-	if (console == undefined || console.log == undefined) {
-		console = {
+	if (window.console == undefined) {
+		window.console = {
 			log: function() {}
-		};
+		}
 	}
 
 	$.fn.replremote = function(settings) {
