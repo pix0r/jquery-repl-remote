@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+	<head>
+		<title>REPL Remote Sample</title>
+		<style type="text/css">
+			#repl {
+				width: 600px;
+				height: 300px;
+				border: solid 1px black;
+				overflow: auto;
+			}
+			#repl .reploutput {
+				font-family: monospace;
+			}
+			#repl .replinput {
+				font-family: monospace;
+				font-weight: bold;
+			}
+		</style>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+		<script type="text/javascript" src="jquery.replremote.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var repl = $('#repl').replremote({
+					endpoint: 'http://api.hostip.info/get_html.php?ip=',
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<h1>REPL Remote Demo</h1>
+		<div id="repl"></div>
+	</body>
+</html>
+
