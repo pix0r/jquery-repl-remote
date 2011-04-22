@@ -1,7 +1,7 @@
 /**
  * jQuery REPL Remote
  *
- * Provides a REPL console that communicates with a remote server
+ * Provides a pseudo REPL console that communicates with a remote server
  *
  * Usage:
  * $('#myelement').replremote({
@@ -19,59 +19,59 @@
 	$.fn.replremote = function(settings) {
 		var repl = this;
 		var id = this.attr('id'),
-			inputId = '__replInput_' + id;
+			inputId = '__replInput_' + id,
+			lineCount = 0;
 
-		var defaultEndpoint = 'http://api.hostip.info/get_html.php?ip=';
-		var defaultSend = function(command, endpoint) {
-			$.ajax({
-				url: endpoint + escape(command),
-				success: function(data) {
-					repl.receive(data);
-				},
-				error: function(data) {
-					repl.error(data);
-				}
-			});
-		};
-		var defaultReceive = function(data) {
-			repl.show(data);
-		};
-
-		settings = $.extend({
-			endpoint: defaultEndpoint,
-			send: defaultSend,
-			receive: defaultReceive,
-			input: null
+		repl.settings = $.extend({
+			endpoint: 'http://api.hostip.info/get_html.php?ip=',
+			send: function(command, endpoint) {
+				$.ajax({
+					url: endpoint + escape(command),
+					success: function(data) {
+						repl.receive(data);
+					},
+					error: function(data) {
+						repl.error(data);
+					}
+				});
+			},
+			receive: function(data) {
+				repl.show(data);
+			},
+			input: null,
+			autoscroll: true,
+			autoscrollDuration: 300,
 		}, settings || {});
 
-		this.settings = settings;
-
 		// Configure input element
-		if (settings.input) {
-			if (settings.input.attr('id')) {
-				inputId = settings.input.attr('id');
+		if (repl.settings.input) {
+			if (repl.settings.input.attr('id')) {
+				inputId = repl.settings.input.attr('id');
 			} else {
-				settings.input.attr('id', inputId);
+				repl.settings.input.attr('id', inputId);
 			}
 		} else {
 			this.after('<input type="text" name="__replInput" id="' + inputId + '" class="repl" />');
-			settings.input = $('#' + inputId);
-			settings.input.css('width', repl.css('width'));
-
+			repl.settings.input = $('#' + inputId);
+			repl.settings.input.width(repl.width());
+			//repl.settings.input.css('width', repl.css('width'));
 		}
-		settings.input.keypress(function(e) {
+
+		// Handle keyboard input
+		repl.settings.input.keypress(function(e) {
 			var code = (e.keyCode ? e.keyCode : e.which);
 			if (code == 13) {
+				// Enter/return
 				repl.sendCommand();
 				e.preventDefault();
 			}
 		});
 
 		this.sendCommand = function() {
-			var c = settings.input.attr('value');
+			var c = repl.settings.input.attr('value');
 			repl.settings.send(c, repl.settings.endpoint, repl.settings.receive);
-			repl.showInput(c);
 			repl.settings.input.attr('value', '');
+			repl.append('<span class="replinput">&gt;&gt; ' + c+ '</span><br />');
 		};
 
 		this.receive = function(data) {
@@ -80,20 +80,30 @@
 
 		this.show = function(str) {
 			var lines = str.split("\n");
+			var lastId;
+
+			var scrolledToBottom = repl[0].scrollHeight - repl.scrollTop() <= repl.outerHeight() + 20;
+
 			for (var x in lines) {
 				var s = lines[x].replace(/^\s+|\s+$/g, '');
 				if (!s) continue;
-				repl.showLine(lines[x]);
+				lastId = repl.showLine(lines[x]);
+			}
+			if (repl.settings.autoscroll && scrolledToBottom) {
+				repl.animate({
+					scrollTop: repl.get(0).scrollHeight
+				}, repl.settings.autoscrollDuration);
+				console.log(repl.settings);
+			} else {
 			}
 		};
 
 		this.showLine = function(line) {
-			repl.append('<span class="reploutput">' + line + '</span><br />');
+			var lineId = '__repl_' + id + '_line_' + lineCount;
+			repl.append('<span id="' + lineId + '" class="reploutput">' + line + '</span><br />');
+			lineCount++;
+			return lineId;
 		};
-
-		this.showInput = function(line) {
-			repl.append('<span class="replinput">' + line + '</span><br />');
-		}
 
 		this.error = function(data) {
 			console.log('[replremote] An error occurred!');
