@@ -10,11 +10,6 @@
  */
 
 (function($) {
-	if (window.console == undefined) {
-		window.console = {
-			log: function() {}
-		}
-	}
 
 	$.fn.replremote = function(settings) {
 		var repl = this;
@@ -38,6 +33,7 @@
 			receive: function(data) {
 				repl.show(data);
 			},
+			debug: null,
 			input: null,
 			autoscroll: true,
 			autoscrollDuration: 300,
@@ -72,10 +68,14 @@
 			repl.settings.send(c, repl.settings.endpoint, repl.settings.receive);
 			repl.settings.input.attr('value', '');
 			repl.append('<span class="replinput">&gt;&gt; ' + c+ '</span><br />');
+			repl.debug("Sent \"" + c + "\" to endpoint \"" + repl.settings.endpoint + "\"");
 		};
 
 		this.receive = function(data) {
 			repl.settings.receive(data);
+			if (repl.settings.debug) {
+				repl.settings.debug.append("Received " + data.toString().length + " bytes");
+			}
 		};
 
 		this.show = function(str) {
@@ -93,7 +93,6 @@
 				repl.animate({
 					scrollTop: repl.get(0).scrollHeight
 				}, repl.settings.autoscrollDuration);
-				console.log(repl.settings);
 			} else {
 			}
 		};
@@ -106,7 +105,17 @@
 		};
 
 		this.error = function(data) {
-			console.log('[replremote] An error occurred!');
+			repl.debug('An error occurred!');
+			repl.debug(data);
+		};
+
+		this.debug = function(data) {
+			if (repl.settings.debug) {
+				$(repl.settings.debug).append("<p>" + data.toString() + "</p>");
+			}
+			if (typeof console != 'undefined' && console.log) {
+				console.log(data);
+			}
 		};
 
 		return this;
